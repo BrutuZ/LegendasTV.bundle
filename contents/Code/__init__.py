@@ -34,8 +34,8 @@ def ValidatePrefs():
 def tvSearch(params, lang):
 	# Log("Params: %s" % urllib.urlencode(params))
 	# buscaURL = LEGENDAS_SEARCH_PAGE + urllib.urlencode(params)
-	Log("Params: " + string.strip(params['Nome'] + ".s" + params['Temp'] + "e" + params['Epi'] + " " + params['Source'] + " " + params['Grupo']))
-	buscaURL = LEGENDAS_SEARCH_PAGE + urllib.quote(string.strip(params['Nome'] + ".s" + params['Temp'] + "e" + params['Epi'] + " " + params['Source'] + " " + params['Grupo']))
+	Log("Params: " + string.strip(params['Nome'] + "s" + params['Temp'] + "e" + params['Epi'] + " " + params['Source'] + " " + params['Grupo']))
+	buscaURL = LEGENDAS_SEARCH_PAGE + urllib.quote(string.strip(params['Nome'] + "s" + params['Temp'] + "e" + params['Epi'] + " " + params['Source'] + " " + params['Grupo']))
 	# buscaURL = repr(LEGENDAS_SEARCH_PAGE + urllib.quote(params['Nome'] + " s" + repr(params['Temp']) + "e" + repr(params['Epi']) + " " + params['Grupo']))
 	#buscaURL = LEGENDAS_SEARCH_PAGE + params['Nome'] + " s" + params['Temp'] + "e" + params['Epi'] + " " + params['Grupo']
 	return simpleSearch(buscaURL, lang)
@@ -43,8 +43,8 @@ def tvSearch(params, lang):
 def movieSearch(params, lang):
 	# Log("Params: %s" % urllib.urlencode(params))
 	# buscaURL = LEGENDAS_SEARCH_PAGE + urllib.urlencode(params)
-	Log("Params: \"" + params['Nome'] + "\" " + params['Ano'] + " " + params['Source'] +  " " + params['Grupo'])
-	buscaURL = LEGENDAS_SEARCH_PAGE + urllib.quote("\"" + params['Nome'] + "\" " + repr(params['Ano'] + " " + params['Source'] + " " + params['Grupo']))
+	Log("Params: " + params['Nome'] + " " + params['Ano'] + " " + params['Source'] +  " " + params['Grupo'])
+	buscaURL = LEGENDAS_SEARCH_PAGE + urllib.quote(params['Nome'] + " " + params['Ano'] + " " + params['Source'] + " " + params['Grupo'])
 	return simpleSearch(buscaURL, lang)
 
 
@@ -64,17 +64,18 @@ def simpleSearch(buscaURL, lang = 'pb'):
 	# return snarf
 
 # def foobar():
-	Log("PhantonJS in: " + os.path.realpath(os.getcwd() + '/../../../Plug-ins/LegendasTV.bundle/contents/Libraries/Shared/selenium/webdriver/phantomjs/' + phantompath))
+	Log("PhantomJS in: " + os.path.realpath(os.getcwd() + '/../../../Plug-ins/LegendasTV.bundle/contents/Libraries/Shared/selenium/webdriver/phantomjs/' + phantompath))
 	browser = selenium.webdriver.PhantomJS(os.path.normcase('../../../Plug-ins/LegendasTV.bundle/contents/Libraries/Shared/selenium/webdriver/phantomjs/' + phantompath))
 	# wait for the page to load
+	browser.get(str(buscaURL))
 	try:
-		browser.get(str(buscaURL))
-		WebDriverWait(browser, timeout=300).until(lambda x: x.find_element_by_id('resultado_busca'))
+		WebDriverWait(browser, 120).until(lambda x: x.find_element_by_id('resultado_busca'))
 	except:
 		Log("Browser timed out. Site may be experiencing some problems")
 		return subUrls
-	# store it to string variable
-	page_source = browser.page_source
+	finally:
+		# store it to string variable
+		page_source = browser.page_source
 	browser.quit()
 	# Log(page_source)
 
@@ -155,29 +156,36 @@ def searchSubs(data, isTvShow, lang='pb'):
 
 	if not subUrls:
 		d = dict(data) # make a copy so that we still include release group for other searches
-		if d['Nome'] != d['Nome'].translate(None,"'\"!?:."):
-			d['Nome'] = d['Nome'].translate(None,"'\"!?:.")
+		if d['Nome'] != d['Nome'].translate(None,"'\"!?:"):
 			Log("%d subs found - Stripping special characters: " % len(subUrls))
-			subUrls = doSearch(d, lang, isTvShow)
-		if not subUrls:
-			Log("%d subs found - Spacing Season Episode" % len(subUrls))
-			d['Temp'] = d['Temp'] + ' '
+			d['Nome'] = d['Nome'].translate(None,"'\"!?:")
 			subUrls = doSearch(d, lang, isTvShow)
 			if not subUrls:
-				Log("%d subs found - Removing release group" % len(subUrls))
-				# del d['Grupo']
-				d['Grupo'] = ''
+				Log("%d subs found - Replacing dots with spaces: " % len(subUrls))
+				d['Nome'] = d['Nome'].replace('.',' ')
 				subUrls = doSearch(d, lang, isTvShow)
-				if not subUrls:
-					Log("%d subs found - Removing source type" % len(subUrls))
-					d['Source'] = ''
+				if not subUrls and isTvShow:
+					Log("%d subs found - Spacing Season Episode" % len(subUrls))
+					d['Temp'] = d['Temp'] + ' '
 					subUrls = doSearch(d, lang, isTvShow)
+				if not subUrls and not isTvShow:
+					Log("%d subs found - Removing Year" % len(subUrls))
+					d['Ano'] = ''
+					subUrls = doSearch(d, lang, isTvShow)
+				if not subUrls:
+					Log("%d subs found - Removing release group" % len(subUrls))
+					# del d['Grupo']
+					d['Grupo'] = ''
+					subUrls = doSearch(d, lang, isTvShow)
+					if not subUrls:
+						Log("%d subs found - Removing source type" % len(subUrls))
+						d['Source'] = ''
+						subUrls = doSearch(d, lang, isTvShow)
 
 	return subUrls
 
 def getSubsForPart(data, isTvShow=True):
 	siList = []
-	subUrls = []
 	# for lang in getLangList():
 		#Log("Lang: %s,%s" % (lang, langPrefs2Legendas[lang]))
 		# data['Lang'] = langPrefs2Legendas[lang]
@@ -226,7 +234,7 @@ def getSubsForPart(data, isTvShow=True):
 				if data['Grupo'] == '':
 					continue
 				elif data['Grupo'].lower() in nameA.lower():
-					if string.split(data['Filename'].lower(),os.sep)[-1] == nameA:
+					if string.split(data['Filename'].lower(),os.sep)[-1][:-4] == nameA.lower()[:-4]:
 						Log('Perfect match! \n' + string.split(data['Filename'],os.sep)[-1] + ' | Filename \n' + nameA + ' | subtitle')
 					else:
 						Log('Decent match! \n' + string.split(data['Filename'],os.sep)[-1] + ' | Filename \n' + nameA + ' | subtitle')
@@ -240,7 +248,7 @@ def getSubsForPart(data, isTvShow=True):
 					name = str(parse)
 
 				Log("Name in pack: %s" % name)
-				if name in ['Legendas.tv.url','Legendas.tv.txt']:
+				if name in ['Legendas.tv.url','Legendas.tv.txt','Créditos.txt']:
 					Log("Ignoring link")
 					continue
 				if os.sep in name or 'MACOSX' in name:
@@ -331,7 +339,7 @@ class LegendasTVAgentMovies(Agent.Movies):
 				Log("Release group %s" % getReleaseGroup(part.file))
 
 				data = {}
-				data['Nome'] = media.title
+				data['Nome'] = str(media.title).replace(' ','.')
 				data['Grupo'] = getReleaseGroup(part.file)
 				data['Ano'] = str(mc.year)
 				data['Filename'] = part.file
@@ -363,7 +371,7 @@ class LegendasTVAgentTvShows(Agent.TV_Shows):
 				for item in media.seasons[season].episodes[episode].items:
 					for part in item.parts:
 						data = {}
-						data['Nome'] = str(media.title).replace(' ','.')
+						data['Nome'] = str(media.title + ' ').replace(' ','.')
 						data['Temp'] = str(season).rjust(2,str("0"))
 						data['Epi'] = str(episode).rjust(2,str("0"))
 						data['Source'] = getVideoSource(part.file)
