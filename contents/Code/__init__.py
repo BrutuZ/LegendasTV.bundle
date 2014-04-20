@@ -160,27 +160,27 @@ def searchSubs(data, isTvShow, lang='pb'):
 			Log("%d subs found - Stripping special characters: " % len(subUrls))
 			d['Nome'] = d['Nome'].translate(None,"'\"!?:")
 			subUrls = doSearch(d, lang, isTvShow)
-			if not subUrls:
-				Log("%d subs found - Replacing dots with spaces: " % len(subUrls))
-				d['Nome'] = d['Nome'].replace('.',' ')
-				subUrls = doSearch(d, lang, isTvShow)
-				if not subUrls and isTvShow:
-					Log("%d subs found - Spacing Season Episode" % len(subUrls))
-					d['Temp'] = d['Temp'] + ' '
-					subUrls = doSearch(d, lang, isTvShow)
-				if not subUrls and not isTvShow:
-					Log("%d subs found - Removing Year" % len(subUrls))
-					d['Ano'] = ''
-					subUrls = doSearch(d, lang, isTvShow)
-				if not subUrls:
-					Log("%d subs found - Removing release group" % len(subUrls))
-					# del d['Grupo']
-					d['Grupo'] = ''
-					subUrls = doSearch(d, lang, isTvShow)
-					if not subUrls:
-						Log("%d subs found - Removing source type" % len(subUrls))
-						d['Source'] = ''
-						subUrls = doSearch(d, lang, isTvShow)
+		if not subUrls:
+			Log("%d subs found - Replacing dots with spaces: " % len(subUrls))
+			d['Nome'] = d['Nome'].replace('.',' ')
+			subUrls = doSearch(d, lang, isTvShow)
+		if not subUrls and isTvShow:
+			Log("%d subs found - Spacing Season Episode" % len(subUrls))
+			d['Temp'] = d['Temp'] + ' '
+			subUrls = doSearch(d, lang, isTvShow)
+		if not subUrls and not isTvShow:
+			Log("%d subs found - Removing Year" % len(subUrls))
+			d['Ano'] = ''
+			subUrls = doSearch(d, lang, isTvShow)
+		if not subUrls:
+			Log("%d subs found - Removing release group" % len(subUrls))
+			# del d['Grupo']
+			d['Grupo'] = ''
+			subUrls = doSearch(d, lang, isTvShow)
+		if not subUrls:
+			Log("%d subs found - Removing source type" % len(subUrls))
+			d['Source'] = ''
+			subUrls = doSearch(d, lang, isTvShow)
 
 	return subUrls
 
