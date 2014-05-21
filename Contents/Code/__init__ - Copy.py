@@ -34,8 +34,8 @@ def ValidatePrefs():
 def tvSearch(params, lang):
 	# Log("Params: %s" % urllib.urlencode(params))
 	# buscaURL = LEGENDAS_SEARCH_PAGE + urllib.urlencode(params)
-	Log("Params: " + string.strip(params['Nome'] + params['Temp'] + params['Epi'] + params['Source'] + params['Grupo']))
-	buscaURL = LEGENDAS_SEARCH_PAGE + urllib.quote(string.strip(params['Nome'] + params['Temp'] + params['Epi'] + params['Source'] + params['Grupo']))
+	Log("Params: " + string.strip(params['Nome'] + params['Temp'] + params['Epi'] + " " + params['Source'] + " " + params['Grupo']))
+	buscaURL = LEGENDAS_SEARCH_PAGE + urllib.quote(string.strip(params['Nome'] + params['Temp'] + params['Epi'] + " " + params['Source'] + " " + params['Grupo']))
 	# buscaURL = repr(LEGENDAS_SEARCH_PAGE + urllib.quote(params['Nome'] + " s" + repr(params['Temp']) + "e" + repr(params['Epi']) + " " + params['Grupo']))
 	#buscaURL = LEGENDAS_SEARCH_PAGE + params['Nome'] + " s" + params['Temp'] + "e" + params['Epi'] + " " + params['Grupo']
 	return simpleSearch(buscaURL, lang)
@@ -43,8 +43,8 @@ def tvSearch(params, lang):
 def movieSearch(params, lang):
 	# Log("Params: %s" % urllib.urlencode(params))
 	# buscaURL = LEGENDAS_SEARCH_PAGE + urllib.urlencode(params)
-	Log("Params: " + params['Nome'] + params['Ano'] + params['Source'] +  params['Grupo'])
-	buscaURL = LEGENDAS_SEARCH_PAGE + urllib.quote(params['Nome'] + params['Ano'] + params['Source'] + params['Grupo'])
+	Log("Params: " + params['Nome'] + " " + params['Ano'] + " " + params['Source'] +  " " + params['Grupo'])
+	buscaURL = LEGENDAS_SEARCH_PAGE + urllib.quote(params['Nome'] + " " + params['Ano'] + " " + params['Source'] + " " + params['Grupo'])
 	return simpleSearch(buscaURL, lang)
 
 
@@ -69,9 +69,9 @@ def simpleSearch(buscaURL, lang = 'por'):
 	# wait for the page to load
 	try:
 		browser.get(str(buscaURL))
-		WebDriverWait(browser, 300).until(lambda x: x.find_element_by_id('resultado_busca'))
+		WebDriverWait(browser, 120).until(lambda x: x.find_element_by_id('resultado_busca'))
 	except:
-		Log("BROWSER TIMED OUT. Site may be experiencing some problems")
+		Log("Browser timed out. Site may be experiencing some problems")
 		return subUrls
 	finally:
 		# store it to string variable
@@ -95,45 +95,45 @@ def simpleSearch(buscaURL, lang = 'por'):
 
 	return subUrls
 
-# def getDownloadUrlFromPage(pageElem):
-	# dlPart = pageElem.xpath("//*[@id='resultado_busca']/div/article/div/div/p[1]/a/@href")[0]
-	# Log("Result: %s" % dlPart)
-	# return LEGENDAS_MAIN_PAGE + dlPart
+def getDownloadUrlFromPage(pageElem):
+	dlPart = pageElem.xpath("//*[@id='resultado_busca']/div/article/div/div/p[1]/a/@href")[0]
+	Log("Result: %s" % dlPart)
+	return LEGENDAS_MAIN_PAGE + dlPart
 
 # def getDownloadUrlFromPage2(pageElem):
 	# dlPart = pageElem.xpath("//div[@class='podnapis_tabele_download']//a[contains(@href,'download')]/@href")[0]
 	# return LEGENDAS_MAIN_PAGE + dlPart
 
-# def getDownloadUrlFromPage1(pageElem):
-	# dlPart = None
-	# funcName = None
-	# dlScriptTag = pageElem.xpath("//script[contains(text(),'download')]/text()")[0]
-	# Log("dlScriptTag: %s" % dlScriptTag)
-	# p = re.compile("'.*'")
-	# m = p.search(dlScriptTag)
-	# if (m != None):
-		# dlPart = m.group()
-		# dlPart = dlPart[1:len(dlPart) - 1]
-		# Log("dlPart: %s" % dlPart)
+def getDownloadUrlFromPage1(pageElem):
+	dlPart = None
+	funcName = None
+	dlScriptTag = pageElem.xpath("//script[contains(text(),'download')]/text()")[0]
+	Log("dlScriptTag: %s" % dlScriptTag)
+	p = re.compile("'.*'")
+	m = p.search(dlScriptTag)
+	if (m != None):
+		dlPart = m.group()
+		dlPart = dlPart[1:len(dlPart) - 1]
+		Log("dlPart: %s" % dlPart)
 
-	# p = re.compile("\s(\w*)")
-	# m = p.search(dlScriptTag)
-	# funcName = string.strip(m.group())
-	# Log("funcName: :%s" % funcName)
+	p = re.compile("\s(\w*)")
+	m = p.search(dlScriptTag)
+	funcName = string.strip(m.group())
+	Log("funcName: :%s" % funcName)
 
-	# argScriptXpath = "//script[contains(text(),'%s')]/text()" % funcName
-	# Log("argScriptXpath: %s" % argScriptXpath)
-	# argScriptTag = pageElem.xpath(argScriptXpath)[1]
-	# Log("argScriptTag: %s" % argScriptTag)
+	argScriptXpath = "//script[contains(text(),'%s')]/text()" % funcName
+	Log("argScriptXpath: %s" % argScriptXpath)
+	argScriptTag = pageElem.xpath(argScriptXpath)[1]
+	Log("argScriptTag: %s" % argScriptTag)
 
-	# p = re.compile("\('(\w+)")
-	# m = p.search(argScriptTag)
-	# arg = m.group(1)
-	# Log("arg: %s" % arg)
+	p = re.compile("\('(\w+)")
+	m = p.search(argScriptTag)
+	arg = m.group(1)
+	Log("arg: %s" % arg)
 
-	# dlPage = LEGENDAS_MAIN_PAGE + dlPart + arg
-	# Log("dlPage: %s" % dlPage)
-	# return dlPage
+	dlPage = LEGENDAS_MAIN_PAGE + dlPart + arg
+	Log("dlPage: %s" % dlPage)
+	return dlPage
 
 class SubInfo():
 	def __init__(self, lang, url, sub, name):
@@ -152,66 +152,39 @@ def doSearch(data, lang, isTvShow):
 
 def searchSubs(data, isTvShow, lang='por'):
 
-	#subUrls = doSearch(data, lang, isTvShow)
+	subUrls = doSearch(data, lang, isTvShow)
 
-	d = dict(data) # make a copy so that we still include release group for other searches
-	#if not subUrls:
-	Log("Searching for filename")
-	d['Temp'] = ''
-	d['Epi'] = ''
-	d['Source'] = ''
-	d['Grupo'] = ''
-	d['Nome'] = string.split(d['Filename'].lower(),os.sep)[-1][:-4]
-	subUrls = doSearch(d, lang, isTvShow)
-	if not subUrls and d['Nome'] != d['Nome'].translate(None,"'\"!?:"):
-		Log("%d subs found - Stripping special characters: " % len(subUrls))
-		d['Nome'] = d['Nome'].translate(None,"'\"!?:")
-		subUrls = doSearch(d, lang, isTvShow)
 	if not subUrls:
-		Log("%d subs found - Replacing dots with spaces: " % len(subUrls))
-		d['Nome'] = d['Nome'].replace('.',' ')
-		subUrls = doSearch(d, lang, isTvShow)
-	d = dict(data) # make a copy so that we still include release group for other searches
-	if isTvShow and not subUrls and d['Temp'] == 's00':
-		Log("Special episode, removing s##e## and hoping for the best")
-		d['Temp'] = ''
-		d['Epi'] = ''
-		subUrls = doSearch(d, lang, isTvShow)
-		if not subUrls:
-			Log("We need to go deeper")
+		d = dict(data) # make a copy so that we still include release group for other searches
+		if d['Temp'] == 's00':
+			Log("Special episode, removing s##e## and hoping for the best")
 			d['Temp'] = ''
 			d['Epi'] = ''
-			d['Source'] = ''
-			d['Grupo'] = ''
-			d['Nome'] = string.split(data['Filename'].lower(),os.sep)[-1][:-4]
+		if d['Nome'] != d['Nome'].translate(None,"'\"!?:"):
+			Log("%d subs found - Stripping special characters: " % len(subUrls))
+			d['Nome'] = d['Nome'].translate(None,"'\"!?:")
 			subUrls = doSearch(d, lang, isTvShow)
-	d = dict(data) # make a copy so that we still include release group for other searches
-	#subUrls = doSearch(data, lang, isTvShow)
-	if not subUrls and d['Nome'] != d['Nome'].translate(None,"'\"!?:"):
-		Log("%d subs found - Stripping special characters: " % len(subUrls))
-		d['Nome'] = d['Nome'].translate(None,"'\"!?:")
-		subUrls = doSearch(d, lang, isTvShow)
-	if not subUrls and '.' in d['Nome']:
-		Log("%d subs found - Replacing dots with spaces: " % len(subUrls))
-		d['Nome'] = d['Nome'].replace('.',' ')
-		subUrls = doSearch(d, lang, isTvShow)
-	if not subUrls and isTvShow:
-		Log("%d subs found - Spacing Season Episode" % len(subUrls))
-		d['Temp'] = d['Temp'] + ' '
-		subUrls = doSearch(d, lang, isTvShow)
-	if not subUrls:
-		Log("%d subs found - Removing release group" % len(subUrls))
-		# del d['Grupo']
-		d['Grupo'] = ''
-		subUrls = doSearch(d, lang, isTvShow)
-	if not subUrls and not isTvShow:
-		Log("%d subs found - Removing Year" % len(subUrls))
-		d['Ano'] = ''
-		subUrls = doSearch(d, lang, isTvShow)
-	if d['Source'] and not subUrls:
-		Log("%d subs found - Removing source type" % len(subUrls))
-		d['Source'] = ''
-		subUrls = doSearch(d, lang, isTvShow)
+		if not subUrls:
+			Log("%d subs found - Replacing dots with spaces: " % len(subUrls))
+			d['Nome'] = d['Nome'].replace('.',' ')
+			subUrls = doSearch(d, lang, isTvShow)
+		if not subUrls and isTvShow:
+			Log("%d subs found - Spacing Season Episode" % len(subUrls))
+			d['Temp'] = d['Temp'] + ' '
+			subUrls = doSearch(d, lang, isTvShow)
+		if not subUrls and not isTvShow:
+			Log("%d subs found - Removing Year" % len(subUrls))
+			d['Ano'] = ''
+			subUrls = doSearch(d, lang, isTvShow)
+		if not subUrls:
+			Log("%d subs found - Removing release group" % len(subUrls))
+			# del d['Grupo']
+			d['Grupo'] = ''
+			subUrls = doSearch(d, lang, isTvShow)
+		if d['Source'] and not subUrls:
+			Log("%d subs found - Removing source type" % len(subUrls))
+			d['Source'] = ''
+			subUrls = doSearch(d, lang, isTvShow)
 
 	return subUrls
 
@@ -242,17 +215,15 @@ def getSubsForPart(data, isTvShow=True):
 			# archive.write(rarfile.RarFile(downRar))
 			#archive = rarfile.RarFile(str(logStr))
 			try:
-				archurl = urllib.urlopen(subUrl).geturl()
-				Log("Getting subtitle from: %s" % archurl)
+				Log("Getting subtitle from: %s" % subUrl)
 				#legExt = string.split(urllib.urlopen(subUrl).info()['Content-Disposition'],'.')[-1].strip('"')
-				legExt = string.split(archurl,'.')[-1].strip("'")
+				legExt = string.split(urllib.urlopen(subUrl).geturl(),'.')[-1].strip("'")
 				if legExt == "rar":
 					urllib.urlretrieve(subUrl, 'templeg.rar')
 					archive = rarfile.RarFile('templeg.rar')
 					subArchive = archive.infolist()
 				elif legExt == "zip":
 					subArchive = Archive.ZipFromURL(subUrl)
-					archive = subArchive
 				else:
 					Log('Unkown file format: %s' % subExt)
 			except:
@@ -260,33 +231,21 @@ def getSubsForPart(data, isTvShow=True):
 				continue
 			#Data.Save("LegRar.rar", Leg)
 			# archive.write(rarfile.RarFile,"LegRar.rar")
-			match = 5
 			for parseA in subArchive:
 				if legExt == "rar":
 					nameA = str(parseA.filename)
 				elif legExt == "zip":
-					nameA = str(parseA)
-				#Log('Archive:' + legExt + '\n' + string.split(data['Filename'].lower(),os.sep)[-1] + ' | Filename \n' + nameA.lower() + ' | subtitle')
-				if string.split(data['Filename'].lower(),os.sep)[-1][:-4] == nameA.lower()[:-4]:
-					Log('Perfect match! \n' + string.split(data['Filename'],os.sep)[-1] + ' | Filename \n' + nameA + ' | subtitle')
-					subArchive = [parseA]
-					match = 1
-					break
-				if data['Grupo'].lower() in nameA.lower():
-					Log('Decent match! \n' + string.split(data['Filename'],os.sep)[-1] + ' | Filename \n' + nameA + ' | subtitle')
-					subArchive = [parseA]
-					match = 2
+					nameA = parseA
+				if data['Grupo'] == '':
 					continue
-				if data['Nome'].lower() in nameA.lower() and data['Temp'].lower() in nameA.lower() and data['Epi'].lower() in nameA.lower() and data['Source'].lower() in nameA.lower():
-					Log('"Meh" match! \n' + string.split(data['Filename'],os.sep)[-1] + ' | Filename \n' + nameA + ' | subtitle')
-					if match > 2:
+				elif data['Grupo'].lower() in nameA.lower():
+					if string.split(data['Filename'].lower(),os.sep)[-1][:-4] == nameA.lower()[:-4]:
+						Log('Perfect match! \n' + string.split(data['Filename'],os.sep)[-1] + ' | Filename \n' + nameA + ' | subtitle')
 						subArchive = [parseA]
-					match = 3
-					continue
-				else:
-					Log('Nothing matches - disregarding \n' + string.split(data['Filename'],os.sep)[-1] + ' | Filename \n' + nameA + ' | subtitle')
-					match = 4
-					continue
+						break
+					else:
+						Log('Decent match! \n' + string.split(data['Filename'],os.sep)[-1] + ' | Filename \n' + nameA + ' | subtitle')
+						subArchive = [parseA]
 
 			#Log("subArchive: " + str(subArchive))
 			for parse in subArchive:
@@ -296,11 +255,10 @@ def getSubsForPart(data, isTvShow=True):
 					name = str(parse)
 
 				Log("Name in pack: %s" % name)
-				if not '.srt' in name:
-				#if name in['Legendas.tv.url','Legendas.tv.txt','Créditos.txt']:
-					Log("Ignoring garbage: %s" % name)
+				if name in ['Legendas.tv.url','Legendas.tv.txt','Créditos.txt']:
+					Log("Ignoring link")
 					continue
-				if '/' in name or '\\' in name or 'MACOSX' in name:
+				if os.sep in name or 'MACOSX' in name:
 					Log("Ignoring folder")
 					continue
 				#legFile = tempfile.NamedTemporaryFile(suffix='.srt', prefix=name, delete=False)
@@ -323,7 +281,40 @@ def getSubsForPart(data, isTvShow=True):
 					# subData.write(archive.extract(name))
 					#subData = legFile.file
 				elif legExt == "zip":
-					subData = archive[name]
+					Log("Temp: " + name)
+					if '\\' in name:
+						name = string.split(name,'\\')[-1]
+						Log("Removing folder from filename: %s" % name)
+					if '/' in name:
+						name = string.split(name,'/')[-1]
+						Log("Removing folder from filename: %s" % name)
+					try:
+						Log("Round 1")
+						subData = subArchive[name]
+					except:
+						try:
+							Log("Round 2")
+							subData = subArchive[subArchive.index(name)]
+						except:
+							try:
+								Log("Round 3")
+								subData = subArchive.read(name)
+							except:
+								try:
+									Log("Round 4")
+									name = string.split(data['Filename'],os.sep)[-1]
+									subData = subArchive[name]
+								except:
+									try:
+										Log("Round 5")
+										subData = subArchive[subArchive.index(name)]
+									except:
+										try:
+											Log("Round 6")
+											subData = subArchive.read(name)
+										except:
+											Log("Deu ruim!")
+											break
 				Log(repr(subData))
 				subReg = subUrl + '.' + legExt + '/leg=' + name
 				si = SubInfo(lang, subReg, subData, name)
@@ -389,16 +380,16 @@ class LegendasTVAgentMovies(Agent.Movies):
 
 				data = {}
 				data['Nome'] = str(media.title).replace(' ','.')
-				data['Grupo'] = " " + getReleaseGroup(part.file)
-				data['Ano'] = " " + str(mc.year)
+				data['Grupo'] = getReleaseGroup(part.file)
+				data['Ano'] = str(mc.year)
 				data['Filename'] = part.file
-				data['Source'] = " " + getVideoSource(part.file)
+				data['Source'] = getVideoSource(part.file)
 
 				siList = getSubsForPart(data, False)
 
 				if siList:
 					for si in siList:
-						part.subtitles[Locale.Language.Match(si.lang)][si.url] = Proxy.Media(si.sub, ext=si.ext, format=si.ext) 
+						part.subtitles[Locale.Language.Match(si.lang)][si.url] = Proxy.Media(si.sub, ext=si.ext) 
 
 		del(mediaCopies[metadata.id])
 
@@ -423,8 +414,8 @@ class LegendasTVAgentTvShows(Agent.TV_Shows):
 						data['Nome'] = str(media.title + ' ').replace(' ','.')
 						data['Temp'] = "s" + str(season).rjust(2,str("0"))
 						data['Epi'] = "e" + str(episode).rjust(2,str("0"))
-						data['Source'] = " " + getVideoSource(part.file)
-						data['Grupo'] = " " + getReleaseGroup(part.file)
+						data['Source'] = getVideoSource(part.file)
+						data['Grupo'] = getReleaseGroup(part.file)
 						data['Filename'] = part.file
 						Log("Show: %s" % data['Nome'])
 						Log("Season: %s, Ep: %s" % (data['Temp'], data['Epi']))
