@@ -95,45 +95,45 @@ def simpleSearch(buscaURL, lang = 'por'):
 
 	return subUrls
 
-def getDownloadUrlFromPage(pageElem):
-	dlPart = pageElem.xpath("//*[@id='resultado_busca']/div/article/div/div/p[1]/a/@href")[0]
-	Log("Result: %s" % dlPart)
-	return LEGENDAS_MAIN_PAGE + dlPart
+# def getDownloadUrlFromPage(pageElem):
+	# dlPart = pageElem.xpath("//*[@id='resultado_busca']/div/article/div/div/p[1]/a/@href")[0]
+	# Log("Result: %s" % dlPart)
+	# return LEGENDAS_MAIN_PAGE + dlPart
 
 # def getDownloadUrlFromPage2(pageElem):
 	# dlPart = pageElem.xpath("//div[@class='podnapis_tabele_download']//a[contains(@href,'download')]/@href")[0]
 	# return LEGENDAS_MAIN_PAGE + dlPart
 
-def getDownloadUrlFromPage1(pageElem):
-	dlPart = None
-	funcName = None
-	dlScriptTag = pageElem.xpath("//script[contains(text(),'download')]/text()")[0]
-	Log("dlScriptTag: %s" % dlScriptTag)
-	p = re.compile("'.*'")
-	m = p.search(dlScriptTag)
-	if (m != None):
-		dlPart = m.group()
-		dlPart = dlPart[1:len(dlPart) - 1]
-		Log("dlPart: %s" % dlPart)
+# def getDownloadUrlFromPage1(pageElem):
+	# dlPart = None
+	# funcName = None
+	# dlScriptTag = pageElem.xpath("//script[contains(text(),'download')]/text()")[0]
+	# Log("dlScriptTag: %s" % dlScriptTag)
+	# p = re.compile("'.*'")
+	# m = p.search(dlScriptTag)
+	# if (m != None):
+		# dlPart = m.group()
+		# dlPart = dlPart[1:len(dlPart) - 1]
+		# Log("dlPart: %s" % dlPart)
 
-	p = re.compile("\s(\w*)")
-	m = p.search(dlScriptTag)
-	funcName = string.strip(m.group())
-	Log("funcName: :%s" % funcName)
+	# p = re.compile("\s(\w*)")
+	# m = p.search(dlScriptTag)
+	# funcName = string.strip(m.group())
+	# Log("funcName: :%s" % funcName)
 
-	argScriptXpath = "//script[contains(text(),'%s')]/text()" % funcName
-	Log("argScriptXpath: %s" % argScriptXpath)
-	argScriptTag = pageElem.xpath(argScriptXpath)[1]
-	Log("argScriptTag: %s" % argScriptTag)
+	# argScriptXpath = "//script[contains(text(),'%s')]/text()" % funcName
+	# Log("argScriptXpath: %s" % argScriptXpath)
+	# argScriptTag = pageElem.xpath(argScriptXpath)[1]
+	# Log("argScriptTag: %s" % argScriptTag)
 
-	p = re.compile("\('(\w+)")
-	m = p.search(argScriptTag)
-	arg = m.group(1)
-	Log("arg: %s" % arg)
+	# p = re.compile("\('(\w+)")
+	# m = p.search(argScriptTag)
+	# arg = m.group(1)
+	# Log("arg: %s" % arg)
 
-	dlPage = LEGENDAS_MAIN_PAGE + dlPart + arg
-	Log("dlPage: %s" % dlPage)
-	return dlPage
+	# dlPage = LEGENDAS_MAIN_PAGE + dlPart + arg
+	# Log("dlPage: %s" % dlPage)
+	# return dlPage
 
 class SubInfo():
 	def __init__(self, lang, url, sub, name):
@@ -242,9 +242,10 @@ def getSubsForPart(data, isTvShow=True):
 			# archive.write(rarfile.RarFile(downRar))
 			#archive = rarfile.RarFile(str(logStr))
 			try:
-				Log("Getting subtitle from: %s" % subUrl)
+				archurl = urllib.urlopen(subUrl).geturl()
+				Log("Getting subtitle from: %s" % archurl)
 				#legExt = string.split(urllib.urlopen(subUrl).info()['Content-Disposition'],'.')[-1].strip('"')
-				legExt = string.split(urllib.urlopen(subUrl).geturl(),'.')[-1].strip("'")
+				legExt = string.split(archurl,'.')[-1].strip("'")
 				if legExt == "rar":
 					urllib.urlretrieve(subUrl, 'templeg.rar')
 					archive = rarfile.RarFile('templeg.rar')
@@ -259,23 +260,33 @@ def getSubsForPart(data, isTvShow=True):
 				continue
 			#Data.Save("LegRar.rar", Leg)
 			# archive.write(rarfile.RarFile,"LegRar.rar")
+			match = 5
 			for parseA in subArchive:
 				if legExt == "rar":
 					nameA = str(parseA.filename)
 				elif legExt == "zip":
-					nameA = parseA
+					nameA = str(parseA)
+				#Log('Archive:' + legExt + '\n' + string.split(data['Filename'].lower(),os.sep)[-1] + ' | Filename \n' + nameA.lower() + ' | subtitle')
+				if string.split(data['Filename'].lower(),os.sep)[-1][:-4] == nameA.lower()[:-4]:
+					Log('Perfect match! \n' + string.split(data['Filename'],os.sep)[-1] + ' | Filename \n' + nameA + ' | subtitle')
+					subArchive = [parseA]
+					match = 1
+					break
+				if data['Grupo'].lower() in nameA.lower():
+					Log('Decent match! \n' + string.split(data['Filename'],os.sep)[-1] + ' | Filename \n' + nameA + ' | subtitle')
+					subArchive = [parseA]
+					match = 2
+					continue
 				if data['Nome'].lower() in nameA.lower() and data['Temp'].lower() in nameA.lower() and data['Epi'].lower() in nameA.lower() and data['Source'].lower() in nameA.lower():
 					Log('"Meh" match! \n' + string.split(data['Filename'],os.sep)[-1] + ' | Filename \n' + nameA + ' | subtitle')
-					subArchive = [parseA]
+					if match > 2:
+						subArchive = [parseA]
+					match = 3
 					continue
-				if data['Grupo'].lower() in nameA.lower():
-					if string.split(data['Filename'].lower(),os.sep)[-1][:-4] == nameA.lower()[:-4]:
-						Log('Perfect match! \n' + string.split(data['Filename'],os.sep)[-1] + ' | Filename \n' + nameA + ' | subtitle')
-						subArchive = [parseA]
-						break
-					else:
-						Log('Decent match! \n' + string.split(data['Filename'],os.sep)[-1] + ' | Filename \n' + nameA + ' | subtitle')
-						subArchive = [parseA]
+				else:
+					Log('Nothing matches - disregarding \n' + string.split(data['Filename'],os.sep)[-1] + ' | Filename \n' + nameA + ' | subtitle')
+					match = 4
+					continue
 
 			#Log("subArchive: " + str(subArchive))
 			for parse in subArchive:
@@ -285,7 +296,7 @@ def getSubsForPart(data, isTvShow=True):
 					name = str(parse)
 
 				Log("Name in pack: %s" % name)
-				if name in ['Legendas.tv.url','Legendas.tv.txt','Créditos.txt']:
+				if name in ['Legendas.tv.url','Legendas.tv.txt','CrÃ©ditos.txt']:
 					Log("Ignoring link")
 					continue
 				if os.sep in name or 'MACOSX' in name:
