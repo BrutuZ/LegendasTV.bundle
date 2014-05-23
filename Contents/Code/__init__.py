@@ -1,6 +1,6 @@
 #hdbits.org
 
-import string, os, urllib, zipfile, re, copy, selenium, selenium.common, selenium.webdriver, selenium.webdriver.support.ui
+import sys, string, os, urllib, zipfile, re, copy, selenium, selenium.common, selenium.webdriver, selenium.webdriver.support.ui
 from unrar import rarfile
 from selenium.webdriver.support.ui import WebDriverWait
 
@@ -66,16 +66,29 @@ def simpleSearch(buscaURL, lang = 'por'):
 # def foobar():
 	Log("PhantomJS in: " + os.path.realpath(os.getcwd() + '/../../../Plug-ins/LegendasTV.bundle/contents/Libraries/Shared/selenium/webdriver/phantomjs/' + phantompath))
 	browser = selenium.webdriver.PhantomJS(os.path.normcase('../../../Plug-ins/LegendasTV.bundle/contents/Libraries/Shared/selenium/webdriver/phantomjs/' + phantompath))
+	browser.implicitly_wait(300)
+	browser.set_page_load_timeout(300)
+	#timeout = 10
+	#browser.command_executor._commands['setPageLoadTimeout'] = ('POST', '/session/$sessionId/timeouts')
+	#browser.execute("setPageLoadTimeout", {'ms':300000, 'type':'page load'})
+	#browser.manage().timeouts().pageLoadTimeout(300000,TimeUnit.MILLISECONDS)
 	# wait for the page to load
-	try:
-		browser.get(str(buscaURL))
-		WebDriverWait(browser, 300).until(lambda x: x.find_element_by_id('resultado_busca'))
-	except:
-		Log("BROWSER TIMED OUT. Site may be experiencing some problems")
-		return subUrls
-	finally:
-		# store it to string variable
-		page_source = browser.page_source
+	for attempt in range(15):
+		try:
+			browser.get(str(buscaURL))
+			#wait for element to show
+			#WebDriverWait(browser, 300).until(lambda x: x.find_element_by_id('resultado_busca'))
+			browser.find_element_by_id("resultado_busca")
+		except:
+			Log("BROWSER TIMED OUT. Site may be experiencing some problems. Retrying")
+		else:
+			break
+	else:
+		Log("Timed out too many times. It must be offline, giving up...")
+		sys.exit()
+		#return subUrls
+	page_source = browser.page_source
+	# store it to string variable
 	browser.quit()
 	# Log(page_source)
 
@@ -83,7 +96,7 @@ def simpleSearch(buscaURL, lang = 'por'):
 	# Log("HTML: %s" % elem)
 	# subpages = elem.xpath("//div[@class='gallery clearfix list_element']/article/div/div/p[1]/a/@href")
 	subpages = elem.xpath("//div[@class='f_left']/p[1]/a/@href")
-	Log("Subpages: %s" % subpages)
+	Log("Subpages: %d" % len(subpages))
 	for subpage in subpages:
 		subPageUrl = LEGENDAS_MAIN_PAGE + subpage
 		Log("Subpage: %s" % subPageUrl)
@@ -152,16 +165,8 @@ def doSearch(data, lang, isTvShow):
 
 def searchSubs(data, isTvShow, lang='por'):
 
-	#subUrls = doSearch(data, lang, isTvShow)
-
-	d = dict(data) # make a copy so that we still include release group for other searches
-	#if not subUrls:
 	Log("Searching for filename")
-	d['Temp'] = ''
-	d['Epi'] = ''
-	d['Source'] = ''
-	d['Grupo'] = ''
-	d['Nome'] = string.split(d['Filename'].lower(),os.sep)[-1][:-4]
+	d = {'Temp':'','Epi':'','Source':'','Grupo':'','Ano':'','Nome':string.split(data['Filename'].lower(),os.sep)[-1][:-4]}
 	subUrls = doSearch(d, lang, isTvShow)
 	if not subUrls and d['Nome'] != d['Nome'].translate(None,"'\"!?:"):
 		Log("%d subs found - Stripping special characters: " % len(subUrls))
@@ -179,14 +184,10 @@ def searchSubs(data, isTvShow, lang='por'):
 		subUrls = doSearch(d, lang, isTvShow)
 		if not subUrls:
 			Log("We need to go deeper")
-			d['Temp'] = ''
-			d['Epi'] = ''
-			d['Source'] = ''
-			d['Grupo'] = ''
-			d['Nome'] = string.split(data['Filename'].lower(),os.sep)[-1][:-4]
+			d = {'Temp':'','Epi':'','Source':'','Grupo':'','Ano':'','Nome':string.split(data['Filename'].lower(),os.sep)[-1][:-4]}
 			subUrls = doSearch(d, lang, isTvShow)
-	d = dict(data) # make a copy so that we still include release group for other searches
-	#subUrls = doSearch(data, lang, isTvShow)
+			d = dict(data) # make a copy so that we still include release group for other searches
+	subUrls = doSearch(data, lang, isTvShow)
 	if not subUrls and d['Nome'] != d['Nome'].translate(None,"'\"!?:"):
 		Log("%d subs found - Stripping special characters: " % len(subUrls))
 		d['Nome'] = d['Nome'].translate(None,"'\"!?:")
@@ -277,7 +278,7 @@ def getSubsForPart(data, isTvShow=True):
 					subArchive = [parseA]
 					match = 2
 					continue
-				if data['Nome'].lower() in nameA.lower() and data['Temp'].lower() in nameA.lower() and data['Epi'].lower() in nameA.lower() and data['Source'].lower() in nameA.lower():
+				if (data['Nome'].lower() in nameA.lower() or data['Nome'].replace(' ','.').lower() in nameA.lower()) and data['Temp'].lower() in nameA.lower() and data['Epi'].lower() in nameA.lower() and data['Source'].lower() in nameA.lower():
 					Log('"Meh" match! \n' + string.split(data['Filename'],os.sep)[-1] + ' | Filename \n' + nameA + ' | subtitle')
 					if match > 2:
 						subArchive = [parseA]
