@@ -6,7 +6,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 
 LEGENDAS_MAIN_PAGE = "http://legendas.tv"
-LEGENDAS_SEARCH_PAGE = "http://legendas.tv/busca?q="
+LEGENDAS_SEARCH_PAGE = "http://legendas.tv/util/carrega_legendas_busca/"
 
 OS_PLEX_USERAGENT = 'plexapp.com v9.0'
 subtitleExt = ['utf','utf8','utf-8','sub','srt','smi','rt','ssa','aqt','jss','ass','idx']
@@ -35,7 +35,7 @@ def tvSearch(params, lang):
 	# Log("Params: %s" % urllib.urlencode(params))
 	# buscaURL = LEGENDAS_SEARCH_PAGE + urllib.urlencode(params)
 	Log("Params: " + string.strip(params['Nome'] + params['Temp'] + params['Epi'] + params['Source'] + params['Grupo']))
-	buscaURL = LEGENDAS_SEARCH_PAGE + urllib.quote(string.strip(params['Nome'] + params['Temp'] + params['Epi'] + params['Source'] + params['Grupo']))
+	buscaURL = LEGENDAS_SEARCH_PAGE + urllib.quote(string.strip(params['Nome'] + params['Temp'] + params['Epi'] + params['Source'] + params['Grupo'])) + '/1'
 	# buscaURL = repr(LEGENDAS_SEARCH_PAGE + urllib.quote(params['Nome'] + " s" + repr(params['Temp']) + "e" + repr(params['Epi']) + " " + params['Grupo']))
 	#buscaURL = LEGENDAS_SEARCH_PAGE + params['Nome'] + " s" + params['Temp'] + "e" + params['Epi'] + " " + params['Grupo']
 	return simpleSearch(buscaURL, lang)
@@ -44,7 +44,7 @@ def movieSearch(params, lang):
 	# Log("Params: %s" % urllib.urlencode(params))
 	# buscaURL = LEGENDAS_SEARCH_PAGE + urllib.urlencode(params)
 	Log("Params: " + params['Nome'] + params['Ano'] + params['Source'] +  params['Grupo'])
-	buscaURL = LEGENDAS_SEARCH_PAGE + urllib.quote(params['Nome'] + params['Ano'] + params['Source'] + params['Grupo'])
+	buscaURL = LEGENDAS_SEARCH_PAGE + urllib.quote(params['Nome'] + params['Ano'] + params['Source'] + params['Grupo']) + '/1'
 	return simpleSearch(buscaURL, lang)
 
 
@@ -78,7 +78,7 @@ def simpleSearch(buscaURL, lang = 'por'):
 			browser.get(str(buscaURL))
 			#wait for element to show
 			#WebDriverWait(browser, 300).until(lambda x: x.find_element_by_id('resultado_busca'))
-			browser.find_element_by_id("resultado_busca")
+			#browser.find_element_by_id("resultado_busca")
 		except:
 			Log("BROWSER TIMED OUT. Site may be experiencing some problems. Retrying")
 		else:
