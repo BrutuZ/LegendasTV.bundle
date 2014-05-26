@@ -50,24 +50,19 @@ def movieSearch(params, lang):
 
 #Do a basic search for the filename and return all sub urls found
 def simpleSearch(buscaURL, lang = 'por'):
-	phantompath = Platform.OS + '/phantomjs'
-	if Platform.OS == 'Windows':
-		phantompath = phantompath + '.exe'
-	Log("buscaURL: %s" % buscaURL)
+
+	#phantompath = Platform.OS + '/phantomjs'
+	# if Platform.OS == 'Windows':
+		# phantompath = phantompath + '.exe'
+	# Log("buscaURL: %s" % buscaURL)
 	subUrls = []
 	#Log("RelPath: " + os.path.realpath(__FILE__))
 	# elem = HTML.ElementFromURL(buscaURL)
-	# snarf = []
-	# snarf.append("C:/Users/BrutuZ/AppData/Local/Plex Media Server/Plug-in Support/Data/com.plexapp.agents.legendastv/templeg.rar")
-	# Log("Path?: " + os.path.normcase(os.path.normpath(os.path.join(os.path.splitunc(os.getcwd())[1], '../../../Plug-ins/LegendasTV.bundle/contents/Libraries/Shared/selenium/webdriver/phantomjs/' + phantompath))))
-	# Log("Rel?: " + os.path.relpath(os.path.normpath('/Users/BrutuZ/AppData/Local/Plex Media Server/Plug-ins/LegendasTV.bundle/contents/Libraries/Shared/selenium/webdriver/phantomjs/' + phantompath), os.path.splitunc(os.getcwd())[1]))
-	# return snarf
 
-# def foobar():
-	Log("PhantomJS in: " + os.path.realpath(os.getcwd() + '/../../../Plug-ins/LegendasTV.bundle/contents/Libraries/Shared/selenium/webdriver/phantomjs/' + phantompath))
-	browser = selenium.webdriver.PhantomJS(os.path.normcase('../../../Plug-ins/LegendasTV.bundle/contents/Libraries/Shared/selenium/webdriver/phantomjs/' + phantompath))
-	browser.implicitly_wait(300)
-	browser.set_page_load_timeout(300)
+	# Log("PhantomJS in: " + os.path.realpath(os.getcwd() + '/../../../Plug-ins/LegendasTV.bundle/contents/Libraries/Shared/selenium/webdriver/phantomjs/' + phantompath))
+	# browser = selenium.webdriver.PhantomJS(os.path.normcase('../../../Plug-ins/LegendasTV.bundle/contents/Libraries/Shared/selenium/webdriver/phantomjs/' + phantompath))
+	# browser.implicitly_wait(300)
+	# browser.set_page_load_timeout(300)
 	#timeout = 10
 	#browser.command_executor._commands['setPageLoadTimeout'] = ('POST', '/session/$sessionId/timeouts')
 	#browser.execute("setPageLoadTimeout", {'ms':300000, 'type':'page load'})
@@ -75,24 +70,24 @@ def simpleSearch(buscaURL, lang = 'por'):
 	# wait for the page to load
 	for attempt in range(15):
 		try:
-			browser.get(str(buscaURL))
-			#wait for element to show
-			#WebDriverWait(browser, 300).until(lambda x: x.find_element_by_id('resultado_busca'))
-			#browser.find_element_by_id("resultado_busca")
+			elem = HTML.ElementFromURL(buscaURL)
+			# browser.get(str(buscaURL))
+			# wait for element to show
+			# WebDriverWait(browser, 300).until(lambda x: x.find_element_by_id('resultado_busca'))
+			# browser.find_element_by_id("resultado_busca")
 		except:
 			Log("BROWSER TIMED OUT. Site may be experiencing some problems. Retrying")
 		else:
 			break
 	else:
 		Log("Timed out too many times. It must be offline, giving up...")
-		sys.exit()
+		# sys.exit()
 		#return subUrls
-	page_source = browser.page_source
+	# page_source = browser.page_source
 	# store it to string variable
-	browser.quit()
+	# browser.quit()###
 	# Log(page_source)
 
-	elem = HTML.ElementFromString(page_source)
 	# Log("HTML: %s" % elem)
 	# subpages = elem.xpath("//div[@class='gallery clearfix list_element']/article/div/div/p[1]/a/@href")
 	subpages = elem.xpath("//div[@class='f_left']/p[1]/a/@href")
@@ -273,21 +268,24 @@ def getSubsForPart(data, isTvShow=True):
 					subArchive = [parseA]
 					match = 1
 					break
-				if data['Grupo'].lower() in nameA.lower():
+				if data['Grupo'].lower().strip() in nameA.lower() and len(data['Grupo']) >= 2:
 					Log('Decent match! \n' + string.split(data['Filename'],os.sep)[-1] + ' | Filename \n' + nameA + ' | subtitle')
 					subArchive = [parseA]
 					match = 2
 					continue
-				if (data['Nome'].lower() in nameA.lower() or data['Nome'].replace(' ','.').lower() in nameA.lower()) and data['Temp'].lower() in nameA.lower() and data['Epi'].lower() in nameA.lower() and data['Source'].lower() in nameA.lower():
-					Log('"Meh" match! \n' + string.split(data['Filename'],os.sep)[-1] + ' | Filename \n' + nameA + ' | subtitle')
-					if match > 2:
-						subArchive = [parseA]
-					match = 3
-					continue
-				else:
-					Log('Nothing matches - disregarding \n' + string.split(data['Filename'],os.sep)[-1] + ' | Filename \n' + nameA + ' | subtitle')
-					match = 4
-					continue
+				if data['Nome'].lower() in nameA.lower() or data['Nome'].replace('.',' ').lower() in nameA.lower():
+					if data['Temp'] in nameA.lower():
+						if data['Epi'] in nameA.lower():
+							if data['Source'].lower().strip() in nameA.lower():
+								Log('"Meh" match! \n' + string.split(data['Filename'],os.sep)[-1] + ' | Filename \n' + nameA + ' | subtitle')
+								if match > 2:
+									subArchive = [parseA]
+								match = 3
+								continue
+				Log('Nothing matches - disregarding \n' + string.split(data['Filename'],os.sep)[-1] + ' | Filename \n' + nameA + ' | subtitle')
+				if match > 2:
+					subArchive = []
+				match = 4
 
 			#Log("subArchive: " + str(subArchive))
 			for parse in subArchive:
@@ -345,16 +343,26 @@ def getSubsForPart(data, isTvShow=True):
 
 def getReleaseGroup(filename):
 	# tmpFile = string.replace(filename, '-', '.')
-	tranTab = string.maketrans('[-]','.. ')
-	# if tmpFile != filename:
-		# tmpFile = string.strip(']').replace(filename, '[', '.')
-	tmpFile = filename.translate(tranTab)
-	if ".." in tmpFile:
-		tmpFile = tmpFile.replace("..",".")
-	splitName = string.split(tmpFile, '.')
-	# splitName = string.split(splitFileName[-1], '.')
-	group = splitName[-2].strip()
-	# Log("Filename: %s \r\n tmpFile: %s \r\n splitName: %s \r\n Group: %s" % (repr(filename),repr(tmpFile),repr(splitName),repr(group)))
+	group = ''
+	if '-' in filename:
+		group = string.split(filename,'-')[-1][:-4]
+	if '[' in filename:
+		group = string.split(filename,'[')[-1][:-4]
+	#splitName = string.split(splitName,'.')[-2]
+	group = group.translate(None,'[-]')
+	if '.' in group:
+		group = ''
+	#NEWSTUFF
+	#tranTab = string.maketrans('[-]','.. ')
+	## if tmpFile != filename:
+		## tmpFile = string.strip(']').replace(filename, '[', '.')
+	#tmpFile = filename.translate(tranTab)
+	#if ".." in tmpFile:
+		#tmpFile = tmpFile.replace("..",".")
+	#splitName = string.split(tmpFile, '.')
+	## splitName = string.split(splitFileName[-1], '.')
+	#group = splitName[-2].strip()
+	## Log("Filename: %s \r\n tmpFile: %s \r\n splitName: %s \r\n Group: %s" % (repr(filename),repr(tmpFile),repr(splitName),repr(group)))
 	return group
 
 def getVideoSource(filename):
