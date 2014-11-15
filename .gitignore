@@ -53,3 +53,5 @@ coverage.xml
 docs/_build/
 
 Contents/Code/__init__ - Copy.py
+*.rar
+Contents/Libraries/Shared/unrar/IDLE (Python GUI).lnk
