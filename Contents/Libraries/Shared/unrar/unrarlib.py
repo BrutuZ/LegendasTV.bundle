@@ -25,9 +25,9 @@ from unrar import constants
 
 
 __all__ = ["RAROpenArchiveDataEx", "RARHeaderDataEx", "RAROpenArchiveEx",
-           "RARCloseArchive", "RARReadHeaderEx", "RARProcessFile",
+           "RARCloseArchive", "RARReadHeaderEx", "RARProcessFileW",
            "RARSetPassword", "RARGetDllVersion", "RARSetCallback",
-           "dostime_to_timetuple"]
+           "UNRARCALLBACK", "dostime_to_timetuple"]
 
 
 lib_path = os.environ.get('UNRAR_LIB_PATH', None)

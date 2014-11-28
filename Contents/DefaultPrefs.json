@@ -1,0 +1,13 @@
+[
+        {
+                "id": "username",
+                "label": "Login no site Legendas.tv:",
+                "type": "text"
+        },
+        {
+                "id": "password",
+                "label": "Senha no site Legendas.tv:",
+                "type": "text",
+                "option": "hidden"
+        }
+]
