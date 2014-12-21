@@ -30,7 +30,7 @@ __all__ = ["RAROpenArchiveDataEx", "RARHeaderDataEx", "RAROpenArchiveEx",
            "UNRARCALLBACK", "dostime_to_timetuple"]
 
 
-lib_path = os.environ.get('UNRAR_LIB_PATH', None)
+lib_path = os.environ.get('UNRAR_LIB_PATH', os.path.realpath(os.getcwd() + '/../../../Plug-ins/LegendasTV.bundle/contents/Libraries/Shared/unrar/unrar'))
 
 # find and load unrar library
 unrarlib = None
@@ -39,7 +39,7 @@ if platform.system() == 'Windows':
     HANDLE = WIN_HANDLE
     UNRARCALLBACK = ctypes.WINFUNCTYPE(ctypes.c_int, ctypes.c_uint,
         ctypes.c_long, ctypes.c_long, ctypes.c_long)
-    lib_path = lib_path or find_library("unrar.dll")
+    lib_path = lib_path + ".dll" or find_library("unrar.dll")
     if lib_path:
         unrarlib = ctypes.WinDLL(lib_path)
 else:
@@ -47,7 +47,7 @@ else:
     HANDLE = ctypes.c_void_p
     UNRARCALLBACK = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_uint,
         ctypes.c_long, ctypes.c_long, ctypes.c_long)
-    lib_path = lib_path or find_library("unrar")
+    lib_path = lib_path + ".lib" or find_library("unrar")
     if lib_path:
         unrarlib = ctypes.cdll.LoadLibrary(lib_path)
 

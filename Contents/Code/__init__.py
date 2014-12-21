@@ -41,6 +41,7 @@ def Start():
 	if username == None or password == None:
 		Log("Usuário e/ou senha indefinidos")
 		raise SystemExit()
+	HTTP.ClearCache()
 	HTTP.CacheTime = 10800
 	# HTTP.Headers['User-agent'] = OS_PLEX_USERAGENT
 	HTTP.Headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:31.0) Gecko/20100101 Firefox/31.0'
@@ -49,7 +50,12 @@ def Start():
 	HTTP.Headers['Accept-Encoding'] = 'gzip, deflate'
 	HTTP.Headers['DNT'] = '1'
 	HTTP.Headers['Connection'] = 'keep-alive'
-	getCookie()
+	if Data.Exists('Cookies'):
+		global TVSession
+		TVSession = requests.Session()
+		HTTP.Headers['Cookies'] = Data.LoadObject('Cookies')
+	else:
+		getCookie()
 
 	# HTTP.RandomizeUserAgent()
 	Log("START CALLED")
@@ -134,7 +140,6 @@ def recurSearch(buscaURL, urlList=0):
 	subpages = ''
 	for attempt in range(15):
 		try:
-			# HTTP.ClearCache()
 			# HTTP.ClearCookies()
 			elem = HTML.ElementFromURL(buscaURL, cacheTime=10800, timeout=60, sleep=1)
 			# Log(HTML.StringFromElement(elem))
@@ -143,11 +148,16 @@ def recurSearch(buscaURL, urlList=0):
 			# WebDriverWait(browser, 300).until(lambda x: x.find_element_by_id('resultado_busca'))
 			# browser.find_element_by_id("resultado_busca")
 		except:
-			Log("TIMED OUT. Site may be experiencing some problems. Retrying")
+			Log("Error. Site may be experiencing some problems. Retrying")
+			HTTP.ClearCache()
 		else:
+			# HTTP.ClearCache()
+			# Log("This look serious, maybe we should wait a little longer")
+			# raise
+			# continue
 			break
 	else:
-		Log("Timed out too many times. It must be offline, giving up...")
+		Log("Failed too many times. It must be offline, giving up...")
 		raise SystemExit()
 		#raise 'TIMEOUT'
 		# sys.exit()
@@ -254,10 +264,10 @@ def searchSubs(data, isTvShow, lang='por'):
 				Log("%d subs found - Removing 'The' prefix" % len(subUrls))
 				d['Nome'] = re.sub("(?i)the.","", d['Nome'],1)
 				subUrls = subUrls + list(set(doSearch(d, lang, isTvShow)) - set(subUrls))
-		if d['Nome'] != d['Nome'].translate(None,"'\"!?:"):
+		if d['Nome'] != d['Nome'].translate(None,"'\"!?:()"):
 		# if not subUrls and d['Nome'] != d['Nome'].translate(None,"'\"!?:"):
 			Log("%d subs found - Stripping special characters: " % len(subUrls))
-			d['Nome'] = d['Nome'].translate(None,"'\"!?:")
+			d['Nome'] = d['Nome'].translate(None,"'\"!?:()")
 			subUrls = subUrls + list(set(doSearch(d, lang, isTvShow)) - set(subUrls))
 		if ' ' in d['Nome'] and len(subUrls) < 5:
 		# if not subUrls and ' ' in d['Nome'] and len(subUrls) < 5:
@@ -288,10 +298,10 @@ def searchSubs(data, isTvShow, lang='por'):
 	# d['Grupo'] = ''
 	subUrls = subUrls + list(set(doSearch(d, lang, isTvShow)) - set(subUrls))
 
-	if d['Nome'] != d['Nome'].translate(None,"'\"!?:"):
+	if d['Nome'] != d['Nome'].translate(None,"'\"!?:()"):
 	# if not subUrls and d['Nome'] != d['Nome'].translate(None,"'\"!?:"):
 		Log("%d subs found - Stripping special characters: " % len(subUrls))
-		d['Nome'] = d['Nome'].translate(None,"'\"!?:")
+		d['Nome'] = d['Nome'].translate(None,"'\"!?:()")
 		subUrls = subUrls + list(set(doSearch(d, lang, isTvShow)) - set(subUrls))
 	if '.' in d['Nome'] and len(subUrls) < 5:
 	# if not subUrls and '.' in d['Nome'] and len(subUrls) < 5:
@@ -302,6 +312,11 @@ def searchSubs(data, isTvShow, lang='por'):
 		# Log("%d subs found - Spacing Season Episode" % len(subUrls))
 		# d['Temp'] = d['Temp'] + ' '
 		# subUrls = subUrls + list(set(doSearch(d, lang, isTvShow)) - set(subUrls))
+	if isTvShow and len(subUrls) < 5:
+		d['Grupo'] = ''
+		d['Source'] = ''
+		subUrls = subUrls + list(set(doSearch(d, lang, isTvShow)) - set(subUrls))
+		d = dict(data) # make a copy so that we still include release group for other searches
 	if data['Source'] and len(subUrls) < 5:
 	# if d['Source'] and not subUrls and len(subUrls) < 5:
 		# Log("%d subs found - Adding source type" % len(subUrls))
@@ -317,6 +332,12 @@ def searchSubs(data, isTvShow, lang='por'):
 		d['Grupo'] = ''
 		d['Source'] = data['Source']
 		subUrls = subUrls + list(set(doSearch(d, lang, isTvShow)) - set(subUrls))
+	if isTvShow and len(subUrls) < 1:
+		d['Grupo'] = ''
+		d['Source'] = ''
+		d['Epi'] = ''
+		subUrls = subUrls + list(set(doSearch(d, lang, isTvShow)) - set(subUrls))
+		d = dict(data) # make a copy so that we still include release group for other searches
 	if not isTvShow and len(subUrls) < 5:
 	# if not subUrls and not isTvShow:
 		Log("%d subs found - Removing Year" % len(subUrls))
@@ -408,10 +429,9 @@ def getSubsForPart(data, isTvShow=True):
 	else:
 		# tmpSubUrls = subUrls
 		for subUrl in subUrls:
-			if subUrl in Dict and Dict[subUrl] < 4:
+			if data['Filename'] in Dict and subUrl in Dict[data['Filename']]:
 				Log("Nothing new")
-				break
-			Dict[subUrl] = MATCH
+				continue
 			if MATCH == 1:
 				Log ("Perfection achieved")
 				break
@@ -437,9 +457,6 @@ def getSubsForPart(data, isTvShow=True):
 				TVSession.cookies = Data.LoadObject('Cookies')
 				# getCookie()
 			archurl = TVSession.get(subUrl).url
-			req = HTTP.Request(archurl, headers=TVSession.headers, cacheTime = 300)
-			# Log("URL: " + repr(req.headers))
-			dload = req.content
 			try:
 				# archurl = 'G:\\Plex\\Data\\Plex Media Server\\Plug-in Support\\Data\\com.plexapp.agents.legendastv\\templeg.rar'
 				# dload = TVSession.get(archurl).content
@@ -448,6 +465,9 @@ def getSubsForPart(data, isTvShow=True):
 				legExt = string.split(archurl,'.')[-1].strip('"')
 				Log("Getting subtitle from: %s" % archurl)
 				if legExt == "rar":
+					req = HTTP.Request(archurl, headers=TVSession.headers, cacheTime = 300)
+					# Log("URL: " + repr(req.headers))
+					dload = req.content
 					for attempt in range(15):
 						try:
 							Data.Save('templeg.rar',dload)
@@ -466,7 +486,7 @@ def getSubsForPart(data, isTvShow=True):
 				elif legExt == "zip":
 					for attempt in range(15):
 						try:
-							subArchive = Archive.ZipFromURL(subUrl)
+							subArchive = Archive.ZipFromURL(archurl)
 							archive = subArchive
 						except:
 							Log("ERROR. Retrying...")
@@ -530,7 +550,7 @@ def getSubsForPart(data, isTvShow=True):
 						subData = archive[name]
 					except:
 						Log("Oops!")
-						subData = ''
+						subData = 0
 				else:
 					Log("Wait, wat?")
 				Log(repr(subData))
@@ -539,6 +559,7 @@ def getSubsForPart(data, isTvShow=True):
 				# si = SubInfo(lang, subUrl, subData, name)
 				#Log(repr(si))
 				siList.insert(0,si)
+				Dict[data['Filename']] = subReg
 				# siList.append(si)
 				# Data.Remove("LegFile")
 				#legFile.close()
@@ -688,16 +709,17 @@ class LegendasTVAgentTvShows(Agent.TV_Shows):
 						for lng in part.subtitles:
 							Log("Existing sub lang: " + repr(lng))
 							porta = list(part.subtitles[lng])
-							for subsubs in porta:
-								Log("Existing sub: " + repr(subsubs))
-								data['Downloaded'].append(subsubs)
-								if ('score=1' in subsubs) or ('score=2' in subsubs) or ('score=3' in subsubs):
-									Log("Good enough already")
-								else:
-									siList = getSubsForPart(data)
-								# part.subtitles['pt'][subsubs] = Proxy.Media('')
 							if len(porta) < 1:
 								siList = getSubsForPart(data)
+							else:
+								for subsubs in porta:
+									Log("Existing sub: " + repr(subsubs))
+									data['Downloaded'].append(subsubs)
+									if ('score=1' in subsubs) or ('score=2' in subsubs) or ('score=3' in subsubs):
+										Log("Good enough already")
+									else:
+										siList = getSubsForPart(data)
+									# part.subtitles['pt'][subsubs] = Proxy.Media('')
 
 						if siList:
 							for si in siList:
