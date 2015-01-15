@@ -27,6 +27,11 @@ MATCH = 6
 def getCookie():
 	global TVSession
 	TVSession = requests.Session()
+	if Data.Exists('Cookies'):
+		Log("We have cookies!")
+		HTTP.Headers['Cookies'] = Data.LoadObject('Cookies')
+		return TVSession
+	Log("Cookie jar empty, better fill it up")
 	TVSession.mount('http://', requests.adapters.HTTPAdapter(pool_connections=3600, pool_maxsize=3600, max_retries=3))
 	# fetch the login page
 	TVSession.get(LEGENDAS_LOGIN_PAGE)
@@ -39,7 +44,7 @@ def getCookie():
 
 def Start():
 	if username == None or password == None:
-		Log("Usuário e/ou senha indefinidos")
+		Log("UsuÃ¡rio e/ou senha indefinidos")
 		raise SystemExit()
 	HTTP.ClearCache()
 	HTTP.CacheTime = 10800
@@ -50,19 +55,14 @@ def Start():
 	HTTP.Headers['Accept-Encoding'] = 'gzip, deflate'
 	HTTP.Headers['DNT'] = '1'
 	HTTP.Headers['Connection'] = 'keep-alive'
-	if Data.Exists('Cookies'):
-		global TVSession
-		TVSession = requests.Session()
-		HTTP.Headers['Cookies'] = Data.LoadObject('Cookies')
-	else:
-		getCookie()
+	getCookie()
 
 	# HTTP.RandomizeUserAgent()
 	Log("START CALLED")
 
 def ValidatePrefs():
 	if username == None or password == None:
-		Log("Usuário e/ou senha indefinidos")
+		Log("UsuÃ¡rio e/ou senha indefinidos")
 	return
 
 #Prepare a list of languages we want subs for
@@ -429,7 +429,7 @@ def getSubsForPart(data, isTvShow=True):
 	else:
 		# tmpSubUrls = subUrls
 		for subUrl in subUrls:
-			if data['Filename'] in Dict and subUrl in Dict[data['Filename']]:
+			if data['Filename'] + ' - ' + subUrl in Dict:
 				Log("Nothing new")
 				continue
 			if MATCH == 1:
@@ -452,10 +452,10 @@ def getSubsForPart(data, isTvShow=True):
 			#downRar.write(logStr)
 			# archive.write(rarfile.RarFile(downRar))
 			#archive = rarfile.RarFile(str(logStr))
-			global TVSession
 			if not TVSession.cookies:
-				TVSession.cookies = Data.LoadObject('Cookies')
-				# getCookie()
+				# global TVSession
+				# TVSession.cookies = Data.LoadObject('Cookies')
+				getCookie()
 			archurl = TVSession.get(subUrl).url
 			try:
 				# archurl = 'G:\\Plex\\Data\\Plex Media Server\\Plug-in Support\\Data\\com.plexapp.agents.legendastv\\templeg.rar'
@@ -508,14 +508,14 @@ def getSubsForPart(data, isTvShow=True):
 			# Log("Match: %d" % MATCH)
 			# Log("subArchive: " + repr(subArchive))
 			for parse in subArchive:
-				# subData = '/><=ó'
+				# subData = '/><=Ã³'
 				if legExt == "rar":
 					name = parse.filename
 				elif legExt == "zip":
 					name = parse
 
 				if not '.srt' in name:
-				#if name in['Legendas.tv.url','Legendas.tv.txt','Créditos.txt']:
+				#if name in['Legendas.tv.url','Legendas.tv.txt','CrÃ©ditos.txt']:
 					# Log("Ignoring garbage: %s" % name)
 					continue
 				Log("Name in pack: %s" % name)
@@ -559,14 +559,15 @@ def getSubsForPart(data, isTvShow=True):
 				# si = SubInfo(lang, subUrl, subData, name)
 				#Log(repr(si))
 				siList.insert(0,si)
-				Dict[data['Filename']] = subReg
+				Dict[data['Filename'] + ' - ' + subUrl] = subReg
 				# siList.append(si)
 				# Data.Remove("LegFile")
 				#legFile.close()
 				#if legExt == "rar":
 					#os.unlink(name)
 					#os.unlink('templeg.zip')
-
+			if not data['Filename'] + ' - ' + subUrl in Dict:
+				Dict[data['Filename'] + ' - ' + subUrl] = 'Ok'
 			if legExt == "rar":
 				# os.unlink('templeg.rar')
 				Data.Remove("templeg.rar")
