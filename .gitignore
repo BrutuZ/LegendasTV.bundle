@@ -54,3 +54,4 @@ docs/_build/
 
 *.lnk
 *.rar
+/Contents/Code/__init__ - Copy.py
