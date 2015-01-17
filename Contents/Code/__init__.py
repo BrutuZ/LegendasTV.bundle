@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import string, os, urllib, copy, zipfile, re, requests#, sys
+import string, os, urllib, copy, zipfile, re, time, datetime, requests#, sys
 from unrar import rarfile
 # from selenium.webdriver.support.ui import WebDriverWait
 # import UnRAR2
@@ -27,20 +27,37 @@ MATCH = 6
 def getCookie():
 	global TVSession
 	TVSession = requests.Session()
+	TVSession.mount('http://', requests.adapters.HTTPAdapter(pool_connections=3600, pool_maxsize=3600, max_retries=3))
 	if Data.Exists('Cookies'):
 		Log("We have cookies!")
+		TVSession.cookies = Data.LoadObject('Cookies')
 		HTTP.Headers['Cookies'] = Data.LoadObject('Cookies')
-		return TVSession
-	Log("Cookie jar empty, better fill it up")
-	TVSession.mount('http://', requests.adapters.HTTPAdapter(pool_connections=3600, pool_maxsize=3600, max_retries=3))
+		expires = TVSession.cookies
+		for cookie in TVSession.cookies:
+			#Log(cookie.name + " : " + repr(cookie.expires)) #str(datetime.timedelta(seconds=int(cookie.expires)-int(time.time()))) + " (" + time.strftime("%d %b %Y %H:%M:%S", time.localtime(cookie.expires)) + ")")
+			if cookie.name == 'au':
+				expires = int(cookie.expires)
+		if int(time.time()+1800) < expires:
+			Log("Cookie valid until: " + time.strftime("%d %b %Y %H:%M:%S", time.localtime(expires)))
+			Log("it is now: " + time.strftime("%d %b %Y %H:%M:%S"))
+			Log("they are good for the next " + str(datetime.timedelta(seconds=int(expires-time.time()))))
+			return TVSession
+	Log("Refilling Cookie Jar")
 	# fetch the login page
-	TVSession.get(LEGENDAS_LOGIN_PAGE)
+	# TVSession.get(LEGENDAS_LOGIN_PAGE)
 	# Log("Biscoitos GET: " + repr(TVSession.cookies))
 	# post to the login form
-	TVSession.post(LEGENDAS_LOGIN_PAGE, data={'data[User][username]': username, 'data[User][password]': password, 'data[lembrar]': 'on'})
-	# Log("Biscoitos POST: " + repr(TVSession.cookies))
-	Data.SaveObject('Cookies',TVSession.cookies)
-	return TVSession
+	# TVSession = requests.post(LEGENDAS_LOGIN_PAGE, data={'data[User][username]': username, 'data[User][password]': password, 'data[lembrar]': 'on'}, allow_redirects=False)
+	resp = TVSession.send(TVSession.prepare_request(requests.Request('POST', LEGENDAS_LOGIN_PAGE, data={'data[User][username]': username, 'data[User][password]': password, 'data[lembrar]': 'on'})),timeout=120, allow_redirects=False)
+	Log(resp.status_code)
+	if resp.status_code == 302:
+		Log("Got some tasty cookies")
+		# Log("Biscoitos POST: " + repr(TVSession.cookies))
+		Data.SaveObject('Cookies', TVSession.cookies)
+		return TVSession
+	else:
+		Log("Couldn't login. The site may be unstable or the credentials don't match")
+		raise SystemExit()
 
 def Start():
 	if username == None or password == None:
@@ -497,7 +514,7 @@ def getSubsForPart(data, isTvShow=True):
 				else:
 					Log('Unkown file format: %s' % legExt)
 					getCookie()
-					continue
+					break
 			except:
 				Log("Error downloading subtitle")
 				continue
