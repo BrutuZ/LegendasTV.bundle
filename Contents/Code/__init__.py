@@ -446,9 +446,9 @@ def getSubsForPart(data, isTvShow=True):
 	else:
 		# tmpSubUrls = subUrls
 		for subUrl in subUrls:
-			if data['Filename'] + ' - ' + subUrl in Dict:
-				Log("Nothing new")
-				continue
+			# if data['Filename'] + ' - ' + subUrl in Dict:
+				# Log("Nothing new")
+				# continue
 			if MATCH == 1:
 				Log ("Perfection achieved")
 				break

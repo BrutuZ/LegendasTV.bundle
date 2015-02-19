@@ -42,6 +42,13 @@ if platform.system() == 'Windows':
     lib_path = lib_path + ".dll" or find_library("unrar.dll")
     if lib_path:
         unrarlib = ctypes.WinDLL(lib_path)
+else if platform.system() == 'MacOSX':
+    HANDLE = ctypes.c_void_p
+    UNRARCALLBACK = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_uint,
+        ctypes.c_long, ctypes.c_long, ctypes.c_long)
+    lib_path = lib_path + ".osx" or find_library("unrar")
+    if lib_path:
+        unrarlib = ctypes.cdll.LoadLibrary(lib_path)
 else:
     # assume unix
     HANDLE = ctypes.c_void_p
