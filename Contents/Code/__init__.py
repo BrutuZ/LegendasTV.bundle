@@ -158,7 +158,7 @@ def recurSearch(buscaURL, urlList=0):
 	for attempt in range(15):
 		try:
 			# HTTP.ClearCookies()
-			elem = HTML.ElementFromURL(buscaURL, cacheTime=10800, timeout=60, sleep=1)
+			elem = HTML.ElementFromURL(buscaURL, cacheTime=10800, timeout=60, sleep=5)
 			# Log(HTML.StringFromElement(elem))
 			# browser.get(str(buscaURL))
 			# wait for element to show

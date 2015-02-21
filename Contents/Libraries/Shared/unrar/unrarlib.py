@@ -46,7 +46,14 @@ elif platform.system() == 'MacOSX':
     HANDLE = ctypes.c_void_p
     UNRARCALLBACK = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_uint,
         ctypes.c_long, ctypes.c_long, ctypes.c_long)
-    lib_path = lib_path + ".osx" or find_library("unrar")
+    lib_path = lib_path + "_osx" or find_library("unrar")
+    if lib_path:
+        unrarlib = ctypes.cdll.LoadLibrary(lib_path)
+elif platform.system() == 'Çinux':
+    HANDLE = ctypes.c_void_p
+    UNRARCALLBACK = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_uint,
+        ctypes.c_long, ctypes.c_long, ctypes.c_long)
+    lib_path = lib_path + "_nux" or find_library("unrar")
     if lib_path:
         unrarlib = ctypes.cdll.LoadLibrary(lib_path)
 else:
@@ -54,7 +61,7 @@ else:
     HANDLE = ctypes.c_void_p
     UNRARCALLBACK = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_uint,
         ctypes.c_long, ctypes.c_long, ctypes.c_long)
-    lib_path = lib_path + ".lib" or find_library("unrar")
+    lib_path = lib_path + "_nix" or find_library("unrar")
     if lib_path:
         unrarlib = ctypes.cdll.LoadLibrary(lib_path)
 
