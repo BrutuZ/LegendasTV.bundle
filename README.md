@@ -14,6 +14,10 @@ This package uses the following libraries and dependencies:
 2. Extract the package and rename it to `LegendasTV.bundle`
 3. Put the `LegendasTV.bundle` in [Plex Plugins folder](https://support.plex.tv/hc/en-us/articles/201106098-How-do-I-find-the-Plug-Ins-folder-)
 
-Ubuntu: `/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Plug-ins`
-
 4. On the Plex Manager, set your `username` and `password` for [legendas.tv](http://legendas.tv/) under the agent's settings. Enable it and you're done!
+
+
+
+Plugins Folder in Ubuntu:
+`/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Plug-ins`
+
