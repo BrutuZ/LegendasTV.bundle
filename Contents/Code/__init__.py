@@ -28,7 +28,7 @@ TVBlacklist = []
 if Prefs["blacklist"]:
 	global TVBlacklist
 	item = ''
-	# Blacklist = Prefs["blacklist"]
+	Blacklist = Prefs["blacklist"]
 	Log("Blacklist pref.: "+repr(Blacklist))
 	for i,c in enumerate(Blacklist):
 		item += c
