@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 
 import string, os, urllib, copy, zipfile, re, time, datetime, requests#, sys
 from unrar import rarfile
@@ -9,9 +9,11 @@ from unrar import rarfile
 
 # Network.Timeout = 60
 LEGENDAS_MAIN_PAGE = "http://legendas.tv"
-LEGENDAS_SEARCH_PAGE = "http://legendas.tv/util/carrega_legendas_busca/"
+# LEGENDAS_SEARCH_PAGE = "http://legendas.tv/util/carrega_legendas_busca/"
+LEGENDAS_SEARCH_PAGE = "http://legendas.tv/legenda/busca/"
+# GOOGLE_SEARCH_PAGE = "http://google.com/search?btnI=&q=site:legendas.tv+"
+# "https://google.com/search?site=webhp&source=hp&btnI=1&q=site:legendas.tv "
 LEGENDAS_LOGIN_PAGE = "http://legendas.tv/login"
-# LEGENDAS_SEARCH_PAGE = "http://legendas.tv/legenda/busca/"
 
 OS_PLEX_USERAGENT = 'plexapp.com v9.0'
 subtitleExt = ['utf','utf8','utf-8','sub','srt','smi','rt','ssa','aqt','jss','ass','idx']
@@ -21,6 +23,19 @@ isPack = '-'
 mediaCopies = {}
 username = Prefs["username"]
 password = Prefs["password"]
+TVBlacklist = []
+
+if Prefs["blacklist"]:
+	global TVBlacklist
+	item = ''
+	# Blacklist = Prefs["blacklist"]
+	Log("Blacklist pref.: "+repr(Blacklist))
+	for i,c in enumerate(Blacklist):
+		item += c
+		if c == ';' or i == len(Blacklist)-1:
+			TVBlacklist.append(item)
+			item = ''
+Log("Blacklist: "+repr(TVBlacklist))
 
 MATCH = 6
 
@@ -116,6 +131,18 @@ def simpleSearch(buscaURL, lang = 'por'):
 		# phantompath = phantompath + '.exe'
 	# Log("buscaURL: %s" % buscaURL)
 	subUrls = []
+	# gsearch = buscaURL.replace(LEGENDAS_SEARCH_PAGE,GOOGLE_SEARCH_PAGE)
+	# Log("GSearch: " + gsearch)
+	# if not TVSession.cookies:
+		# getCookie()
+	# gresult = TVSession.get(gsearch, allow_redirects=True)
+	# gresult = gresult.url
+	# Log("GResult1: " + gresult)
+	# gresult = gresult.replace("download","downloadarquivo")
+	# Log("GResult2: " + gresult)
+	# gresult = TVSession.get(gsearch).url
+	# Log("GResult3: " + gresult)
+	# subUrls.append(gresult)
 	pages = 0
 	global cond
 	#Log("RelPath: " + os.path.realpath(__FILE__))
@@ -131,6 +158,7 @@ def simpleSearch(buscaURL, lang = 'por'):
 	#browser.manage().timeouts().pageLoadTimeout(300000,TimeUnit.MILLISECONDS)
 	# wait for the page to load
 	# def searchNow(buscaURL):
+	
 	linksUm = recurSearch(buscaURL + "/1/-/" + str(pages) + "/-")
 	cond = len(linksUm)
 	while cond == 24:
@@ -139,9 +167,11 @@ def simpleSearch(buscaURL, lang = 'por'):
 		for link in linksDois:
 			linksUm.append(link)
 		cond = len(linksDois)
+		if pages == 1:
+			cond = 0
 	for link in linksUm:
 		subUrls.append(link)
-	return list(set(subUrls))
+	return subUrls
 
 def HTMLElementFromURL(url):
 	request = HTTP.Request(url, timeout = 60, sleep = 1, cacheTime = 0)
@@ -272,7 +302,7 @@ def searchSubs(data, isTvShow, lang='por'):
 	d = {'Temp':'','Epi':'','Source':'','Grupo':'','Ano':'','Nome':string.split(data['Filename'].lower(),os.sep)[-1][:-4]}
 	if not ' ' in data['Filename']:
 		Log("Searching for filename")
-		subUrls = subUrls + list(set(doSearch(d, lang, isTvShow)) - set(subUrls))
+		[subUrls.append(i) for i in doSearch(d, lang, isTvShow)]
 		# if not subUrls or len(subUrls) < 5:
 		if len(subUrls) < 5:
 			# Log("Replacing dots with spaces: " % len(subUrls))
@@ -280,67 +310,73 @@ def searchSubs(data, isTvShow, lang='por'):
 			if "the " in d['Nome'] or "The " in d['Nome'] or "the." in d['Nome'] or "The." in d['Nome']:
 				Log("%d subs found - Removing 'The' prefix" % len(subUrls))
 				d['Nome'] = re.sub("(?i)the.","", d['Nome'],1)
-				subUrls = subUrls + list(set(doSearch(d, lang, isTvShow)) - set(subUrls))
+				[subUrls.append(i) for i in doSearch(d, lang, isTvShow)]
 		if d['Nome'] != d['Nome'].translate(None,"'\"!?:()"):
 		# if not subUrls and d['Nome'] != d['Nome'].translate(None,"'\"!?:"):
 			Log("%d subs found - Stripping special characters: " % len(subUrls))
 			d['Nome'] = d['Nome'].translate(None,"'\"!?:()")
-			subUrls = subUrls + list(set(doSearch(d, lang, isTvShow)) - set(subUrls))
+			[subUrls.append(i) for i in doSearch(d, lang, isTvShow)]
 		if ' ' in d['Nome'] and len(subUrls) < 5:
 		# if not subUrls and ' ' in d['Nome'] and len(subUrls) < 5:
 			Log("%d subs found - Replacing spaces with dots: " % len(subUrls))
 			d['Nome'] = d['Nome'].replace(' ','.')
-			subUrls = subUrls + list(set(doSearch(d, lang, isTvShow)) - set(subUrls))
+			[subUrls.append(i) for i in doSearch(d, lang, isTvShow)]
 		if subUrls and MATCH == 1:
-			return subUrls
-
-	if isTvShow and d['Temp'] == 's00':
-		d = dict(data) # make a copy so that we still include release group for other searches
-		Log("Special episode, let's report that")
-		d['Temp'] = 'Special'
-		d['Epi'] = ''
-		subUrls = subUrls + list(set(doSearch(d, lang, isTvShow)) - set(subUrls))
-		if not subUrls:
-			Log("Special episode, removing s##e## and hoping for the best")
-			d['Temp'] = ''
-			subUrls = subUrls + list(set(doSearch(d, lang, isTvShow)) - set(subUrls))
-			if not subUrls:
-				d['Source'] = ''
-				d['Grupo'] = ''
-				Log("We need to go deeper")
-				subUrls = subUrls + list(set(doSearch(d, lang, isTvShow)) - set(subUrls))
+			return list(set(subUrls))
 
 	d = dict(data) # make a copy so that we still include release group for other searches
 	# d['Source'] = ''
 	# d['Grupo'] = ''
-	subUrls = subUrls + list(set(doSearch(d, lang, isTvShow)) - set(subUrls))
+
+	if isTvShow and d['Temp'] == 's00':
+		d = dict(data) # make a copy so that we still include release group for other searches
+		Log("Special episode, let's report that")
+		d['Temp'] = data['Temp']
+		d['Epi'] = ' Special'
+		[subUrls.append(i) for i in doSearch(d, lang, isTvShow)]
+		if not subUrls:
+			Log("Special episode, removing season and hoping for the best")
+			d['Temp'] = ''
+			[subUrls.append(i) for i in doSearch(d, lang, isTvShow)]
+			if not subUrls:
+				d['Grupo'] = ''
+				Log("No Group")
+				[subUrls.append(i) for i in doSearch(d, lang, isTvShow)]
+				if not subUrls:
+					d['Source'] = ''
+					Log("Last chance (No source)")
+					[subUrls.append(i) for i in doSearch(d, lang, isTvShow)]
+
+	if isTvShow and len(subUrls) < 5:
+		d['Grupo'] = ''
+		d['Source'] = ''
+		[subUrls.append(i) for i in doSearch(d, lang, isTvShow)]
+		d = dict(data) # make a copy so that we still include release group for other searches
+
+	d = dict(data) # make a copy so that we still include release group for other searches
+	[subUrls.append(i) for i in doSearch(d, lang, isTvShow)]
 
 	if d['Nome'] != d['Nome'].translate(None,"'\"!?:()"):
 	# if not subUrls and d['Nome'] != d['Nome'].translate(None,"'\"!?:"):
 		Log("%d subs found - Stripping special characters: " % len(subUrls))
 		d['Nome'] = d['Nome'].translate(None,"'\"!?:()")
-		subUrls = subUrls + list(set(doSearch(d, lang, isTvShow)) - set(subUrls))
+		[subUrls.append(i) for i in doSearch(d, lang, isTvShow)]
 	if '.' in d['Nome'] and len(subUrls) < 5:
 	# if not subUrls and '.' in d['Nome'] and len(subUrls) < 5:
 		Log("%d subs found - Replacing dots with spaces: " % len(subUrls))
 		d['Nome'] = d['Nome'].replace('.',' ')
-		subUrls = subUrls + list(set(doSearch(d, lang, isTvShow)) - set(subUrls))
+		[subUrls.append(i) for i in doSearch(d, lang, isTvShow)]
 	# if not subUrls and isTvShow:
 		# Log("%d subs found - Spacing Season Episode" % len(subUrls))
 		# d['Temp'] = d['Temp'] + ' '
 		# subUrls = subUrls + list(set(doSearch(d, lang, isTvShow)) - set(subUrls))
-	if isTvShow and len(subUrls) < 5:
-		d['Grupo'] = ''
-		d['Source'] = ''
-		subUrls = subUrls + list(set(doSearch(d, lang, isTvShow)) - set(subUrls))
-		d = dict(data) # make a copy so that we still include release group for other searches
 	if data['Source'] and len(subUrls) < 5:
 	# if d['Source'] and not subUrls and len(subUrls) < 5:
 		# Log("%d subs found - Adding source type" % len(subUrls))
 		Log("%d subs found - Removing source type" % len(subUrls))
 		d['Grupo'] = data['Grupo']
 		d['Source'] = ''
-		subUrls = subUrls + list(set(doSearch(d, lang, isTvShow)) - set(subUrls))
+		[subUrls.append(i) for i in doSearch(d, lang, isTvShow)]
 	if data['Grupo'] and len(subUrls) < 5:
 	# if data['Grupo'] and not subUrls and len(subUrls) < 5:
 		# Log("%d subs found - Removing release group" % len(subUrls))
@@ -348,22 +384,24 @@ def searchSubs(data, isTvShow, lang='por'):
 		# del d['Grupo']
 		d['Grupo'] = ''
 		d['Source'] = data['Source']
-		subUrls = subUrls + list(set(doSearch(d, lang, isTvShow)) - set(subUrls))
+		[subUrls.append(i) for i in doSearch(d, lang, isTvShow)]
 	if isTvShow and len(subUrls) < 1:
 		d['Grupo'] = ''
 		d['Source'] = ''
 		d['Epi'] = ''
-		subUrls = subUrls + list(set(doSearch(d, lang, isTvShow)) - set(subUrls))
+		[subUrls.append(i) for i in doSearch(d, lang, isTvShow)]
 		d = dict(data) # make a copy so that we still include release group for other searches
 	if not isTvShow and len(subUrls) < 5:
 	# if not subUrls and not isTvShow:
 		Log("%d subs found - Removing Year" % len(subUrls))
 		d['Ano'] = ''
-		subUrls = subUrls + list(set(doSearch(d, lang, isTvShow)) - set(subUrls))
+		[subUrls.append(i) for i in doSearch(d, lang, isTvShow)]
 	Log(repr(subUrls))
 	if data['Downloaded']:
 		Log(repr(data['Downloaded']))
-	return subUrls
+	result = []    
+	[result.append(i) for i in subUrls if not i in result]
+	return result
 
 def checkArchive(subsArchive,legExt,subUrl,data):
 	global MATCH
@@ -379,7 +417,7 @@ def checkArchive(subsArchive,legExt,subUrl,data):
 		# Log("Match: %d" % MATCH)
 		# Log(nameA + ' ' + repr(data))
 		if not '.srt' in nameA:
-			Log("%s | NOT a subtitle" % nameA)
+			Log(repr(nameA) + " | NOT a subtitle")
 			continue
 		if MATCH > 1:
 			if data['Filename'].lower()[:-4] == nameA.lower()[:-4]:
@@ -424,7 +462,7 @@ def checkArchive(subsArchive,legExt,subUrl,data):
 			subArchive = []
 			Log("Match: %d" % MATCH)
 			# MATCH = 6
-		Log('Nothing matches - disregarding \n' + data['Filename'] + ' | Filename \n' + nameA + ' | subtitle')
+		Log('Nothing matches - disregarding \n' + data['Filename'] + ' | Filename \n' + repr(nameA) + ' | subtitle')
 		# if parseA in subArchive:
 			# subArchive.remove(parseA)
 
@@ -722,6 +760,9 @@ class LegendasTVAgentTvShows(Agent.TV_Shows):
 						Log("Release Group: '%s'" % data['Grupo'])
 						data['Downloaded'] = []
 						siList = 0
+						if data['Nome'] in TVBlacklist:
+								Log("No way Jose")
+								break
 						if len(list(part.subtitles)) < 1:
 							siList = getSubsForPart(data)
 						for lng in part.subtitles:

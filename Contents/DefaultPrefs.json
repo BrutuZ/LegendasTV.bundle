@@ -1,13 +1,1 @@
-[
-        {
-                "id": "username",
-                "label": "Login no site Legendas.tv:",
-                "type": "text"
-        },
-        {
-                "id": "password",
-                "label": "Senha no site Legendas.tv:",
-                "type": "text",
-                "option": "hidden"
-        }
-]
+[{"id": "username","label": "Login no site Legendas.tv:","type": "text"},{"id": "password","label": "Senha no site Legendas.tv:","type": "text","option": "hidden","secure": "true"},{"id": "blacklist","label": "Lista de programas ignorados (separados por ;)","type": "text"}]

@@ -18,6 +18,7 @@
 import ctypes
 import os
 import platform
+import struct
 
 from ctypes.util import find_library
 
@@ -30,7 +31,7 @@ __all__ = ["RAROpenArchiveDataEx", "RARHeaderDataEx", "RAROpenArchiveEx",
            "UNRARCALLBACK", "dostime_to_timetuple"]
 
 
-lib_path = os.environ.get('UNRAR_LIB_PATH', os.path.realpath(os.getcwd() + '/../../../Plug-ins/LegendasTV.bundle/contents/Libraries/Shared/unrar/unrar'))
+lib_path = os.environ.get('UNRAR_LIB_PATH', os.path.realpath(os.getcwd() + '/../../../Plug-ins/LegendasTV.bundle/Contents/Libraries/Shared/unrar/unrar'))
 
 # find and load unrar library
 unrarlib = None
@@ -49,11 +50,15 @@ elif platform.system() == 'MacOSX':
     lib_path = lib_path + "_osx" or find_library("unrar")
     if lib_path:
         unrarlib = ctypes.cdll.LoadLibrary(lib_path)
-elif platform.system() == 'Çinux':
+elif platform.system() == 'Linux':
     HANDLE = ctypes.c_void_p
     UNRARCALLBACK = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_uint,
         ctypes.c_long, ctypes.c_long, ctypes.c_long)
-    lib_path = lib_path + "_nux" or find_library("unrar")
+    if struct.calcsize('P') * 8 == 64: #Check if this is a 64bits system
+	    lib_path = lib_path + "_nux64" or find_library("unrar")
+    else:
+        lib_path = lib_path + "_nux" or find_library("unrar")
+
     if lib_path:
         unrarlib = ctypes.cdll.LoadLibrary(lib_path)
 else:
