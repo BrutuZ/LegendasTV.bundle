@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 import string, os, urllib, copy, zipfile, re, time, datetime, requests#, sys
 from unrar import rarfile
@@ -441,11 +441,13 @@ def checkArchive(subsArchive,legExt,subUrl,data):
 					if data['Temp'] in nameA.lower():
 						if data['Epi'] in nameA.lower():
 							if data['Grupo'].lower().strip() in nameA.lower():
-								Log('Decent match! \n' + data['Filename'] + ' | Filename \n' + nameA + ' | subtitle')
-								subArchive = [parseA]
-								MATCH = 3
-								Log("Match: %d" % MATCH)
-								continue
+								if (data['Repack']==1 and nameA.find("REPACK")>0 or nameA.find("repack")>0) or (data['Repack']==0 and nameA.find("REPACK")==-1 or nameA.find("repack")==-1) or (data['PROPER']==0 and nameA.find("PROPER")==-1 or nameA.find("proper")==-1) or (data['PROPER']==1 and nameA.find("PROPER")>0 or nameA.find("proper")>0):
+									Log('Decent match! \n' + data['Filename'] + ' | Filename \n' + nameA + ' | subtitle')
+									subArchive = [parseA]
+									MATCH = 3
+									Log("Match: %d" % MATCH)
+									continue
+
 		if MATCH > 4:
 			if data['Nome'].lower() in nameA.lower() or data['Nome'].replace('.',' ').lower() in nameA.lower() or data['Nome'].replace('.',' ').translate(None,"'\"!?:").lower() in nameA.lower() or data['Nome'].replace(' ','.').lower() in nameA.lower() or data['Nome'].replace(' ','.').translate(None,"'\"!?:").lower() in nameA.lower():
 				if data['Temp'] in nameA.lower():
@@ -470,6 +472,7 @@ def checkArchive(subsArchive,legExt,subUrl,data):
 
 def getSubsForPart(data, isTvShow=True):
 	global MATCH
+	global TVSession
 	MATCH = 6
 	siList = []
 	# for lang in getLangList():
@@ -630,27 +633,18 @@ def getSubsForPart(data, isTvShow=True):
 
 def getReleaseGroup(filename):
 	# tmpFile = string.replace(filename, '-', '.')
+	if filename.find("[")>0 and filename.find("]")>0 :
+		aux = len(filename)-filename.find("[")
+	else:
+		aux = 4
+
 	group = ''
-	separators = ['.','-','[']
+	separators = ['.','-']
 	for sep in separators:
 		if sep in filename:
-			group = string.split(filename[:-4],sep)[-1]
+			group = string.split(filename[:-aux],sep)[-1]
 	#splitName = string.split(splitName,'.')[-2]
 	group = group.translate(None,'[-].')
-	# if '.' in group or ' ' in group:
-		# group = ''
-	
-	#NEWSTUFF
-	#tranTab = string.maketrans('[-]','.. ')
-	## if tmpFile != filename:
-		## tmpFile = string.strip(']').replace(filename, '[', '.')
-	#tmpFile = filename.translate(tranTab)
-	#if ".." in tmpFile:
-		#tmpFile = tmpFile.replace("..",".")
-	#splitName = string.split(tmpFile, '.')
-	## splitName = string.split(splitFileName[-1], '.')
-	#group = splitName[-2].strip()
-	## Log("Filename: %s \r\n tmpFile: %s \r\n splitName: %s \r\n Group: %s" % (repr(filename),repr(tmpFile),repr(splitName),repr(group)))
 	return group
 
 def getVideoSource(filename):
@@ -696,11 +690,29 @@ class LegendasTVAgentMovies(Agent.Movies):
 				data['Source'] = getVideoSource(string.split(str(part.file),os.sep)[-1])
 				data['Temp'] = ''
 				data['Epi'] = ''
+				data['Repack'] = 0
+				data['PROPER'] = 0
+
+				if string.split(str(part.file),os.sep)[-1].find("REPACK")>0:
+					data['Repack'] = 1
+
+				elif string.split(str(part.file),os.sep)[-1].find("repack")>0:
+					data['Repack'] = 1
+
+				if string.split(str(part.file),os.sep)[-1].find("PROPER")>0:
+					data['PROPER'] = 1
+
+				elif string.split(str(part.file),os.sep)[-1].find("proper")>0:
+					data['PROPER'] = 1
+
 				Log("File: '%s' " % data['Filename'])
 				Log("Movie: '%s'" % data['Nome'])
 				Log("Year: %s" % data['Ano'])
 				Log("Video Source: '%s'" % data['Source'])
 				Log("Release Group: '%s'" % data['Grupo'])
+				Log("Release Group: '%s'" % data['Grupo'])
+				Log("REPACK: '%d'" % data['Repack'])
+				Log("PROPER: '%d'" % data['PROPER'])
 				data['Downloaded'] = []
 				siList = 0
 				if len(list(part.subtitles)) < 1:
@@ -751,13 +763,45 @@ class LegendasTVAgentTvShows(Agent.TV_Shows):
 						data['Source'] = getVideoSource(string.split(str(part.file),os.sep)[-1])
 						data['Grupo'] = getReleaseGroup(string.split(str(part.file),os.sep)[-1])
 						data['Filename'] = string.split(str(part.file),os.sep)[-1]
+						data['Repack'] = 0
+						data['PROPER'] = 0
+
+						if string.split(str(part.file),os.sep)[-1].find("REPACK")>0:
+							data['Repack'] = 1
+
+						elif string.split(str(part.file),os.sep)[-1].find("repack")>0:
+							data['Repack'] = 1
+
+						if string.split(str(part.file),os.sep)[-1].find("PROPER")>0:
+							data['PROPER'] = 1
+
+						elif string.split(str(part.file),os.sep)[-1].find("proper")>0:
+							data['PROPER'] = 1
+
 						if ' ' in data['Filename']:
 							data['Filename'] = '"' + data['Filename'] + '"'
+
+						filename=data['Filename']
+						# tmpFile = string.replace(filename, '-', '.')
+						if filename.find("[")>0 and filename.find("]")>0 :
+							aux = len(filename)-filename.find("[")
+
+						filename2=filename[:-aux]
+
+						if (filename.find("mkv")>0):
+							filename2=filename2+".mkv"
+							
+						elif (filename.find("mp4")>0):
+							filename2=filename2+".mp4"
+
+						data['Filename']=filename2
 						Log("File: '%s'" % data['Filename'])
 						Log("Show: '%s'" % data['Nome'])
 						Log("Season: '%s', Ep: '%s'" % (data['Temp'], data['Epi']))
 						Log("Video Source: '%s'" % data['Source'])
 						Log("Release Group: '%s'" % data['Grupo'])
+						Log("REPACK: '%d'" % data['Repack'])
+						Log("PROPER: '%d'" % data['PROPER'])
 						data['Downloaded'] = []
 						siList = 0
 						if data['Nome'] in TVBlacklist:
