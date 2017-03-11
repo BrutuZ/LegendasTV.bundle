@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 import string, os, urllib, copy, zipfile, re, time, datetime, requests#, sys
 from unrar import rarfile
@@ -470,6 +470,7 @@ def checkArchive(subsArchive,legExt,subUrl,data):
 
 def getSubsForPart(data, isTvShow=True):
 	global MATCH
+	global TVSession
 	MATCH = 6
 	siList = []
 	# for lang in getLangList():
